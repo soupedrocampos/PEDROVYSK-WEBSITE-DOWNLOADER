@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Downloader</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Reset & Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --space-900: #02040A;
+            --space-800: #060913;
+            --space-700: #0B1120;
+            --glass-bg: rgba(255,255,255,0.02);
+            --glass-border: rgba(255,255,255,0.07);
+            --text-primary: #ffffff;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            --accent: #ffffff;
+            --success: #10b981;
+            --error: #ef4444;
+            --processing: #10b981;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Cabinet Grotesk', 'Inter', -apple-system, sans-serif;
+            background-color: var(--space-900);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 20px 80px;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ── Ambient background glows ── */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(100px);
+            mix-blend-mode: screen;
+        }
+        body::before {
+            width: 500px; height: 500px;
+            background: rgba(255,255,255,0.03);
+            top: -100px; left: -100px;
+        }
+        body::after {
+            width: 400px; height: 400px;
+            background: rgba(255,255,255,0.025);
+            bottom: -100px; right: -100px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--space-900); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        /* ── Layout ── */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            padding: 6px 16px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(8px);
+        }
+        .eyebrow .dot {
+            width: 6px; height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+
+        h1 {
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.25rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #ffffff, #888888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+            color: var(--text-primary);
+            font-weight: 300;
+            line-height: 1.6;
+            max-width: 560px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* ── Glass Card ── */
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.25rem;
+            width: 100%;
+            max-width: 620px;
+            box-shadow: 0 8px 60px rgba(0,0,0,0.4),
+                        inset 0 1px 0 rgba(255,255,255,0.06);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Tabs ── */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 9px 10px;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            border-radius: 999px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .tab .tab-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 2.5s ease-in-out infinite;
+            display: none;
+            flex-shrink: 0;
+        }
+        .tab.active {
+            background: var(--success);
+            color: #ffffff;
+            box-shadow: 0 0 18px rgba(16,185,129,0.5),
+                        0 0 40px rgba(16,185,129,0.2),
+                        inset 0 1px 0 rgba(255,255,255,0.15);
+            border: 1px solid rgba(16,185,129,0.6);
+            border-radius: 999px;
+            animation: tab-pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes tab-pulse {
+            0%, 100% { box-shadow: 0 0 18px rgba(16,185,129,0.5), 0 0 40px rgba(16,185,129,0.2), inset 0 1px 0 rgba(255,255,255,0.15); }
+            50%       { box-shadow: 0 0 28px rgba(16,185,129,0.8), 0 0 60px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.15); }
+        }
+        .tab.active .tab-dot { display: none; }
+        .tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+        /* ── Panel: row inputs ── */
+        #panelRows { display: none; }
+        #panelRows.visible { display: block; }
+        #urlList { display: flex; flex-direction: column; gap: 6px; margin-bottom: 0.5rem; }
+
+        .url-row { display: flex; gap: 6px; align-items: center; }
+
+        .url-row input[type="url"] {
+            flex: 1;
+            padding: 9px 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 9px;
+            font-size: 0.85rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .url-row input[type="url"]::placeholder { color: var(--text-dim); }
+        .url-row input[type="url"]:focus {
+            border-color: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+        }
+        .url-row input[type="url"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-remove {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            width: 34px; height: 34px;
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .btn-remove:hover { border-color: rgba(239,68,68,0.5); color: var(--error); background: rgba(239,68,68,0.06); }
+
+        .btn-add-row {
+            background: transparent;
+            border: 1px dashed rgba(255,255,255,0.1);
+            border-radius: 9px;
+            padding: 7px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            color: var(--text-dim);
+            transition: border-color 0.2s, color 0.2s;
+            margin-bottom: 0.75rem;
+        }
+        .btn-add-row:hover { border-color: rgba(255,255,255,0.25); color: var(--text-muted); }
+
+        /* ── Panel: paste ── */
+        #panelPaste { display: none; }
+        #panelPaste.visible { display: block; }
+
+        #pasteArea {
+            width: 100%;
+            min-height: 140px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 0.87rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            color: var(--text-primary);
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        #pasteArea::placeholder { color: var(--text-dim); }
+        #pasteArea:focus {
+            border-color: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+        }
+
+        .paste-hint {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            letter-spacing: 0.01em;
+        }
+
+        #pastePreview {
+            display: none;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+        }
+        #pastePreview.visible { display: block; }
+
+        .preview-label {
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+        .preview-url {
+            padding: 5px 0;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .preview-url:last-child { border-bottom: none; }
+        .badge-ok  { font-size: 0.65rem; font-weight: 600; background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); border-radius: 20px; padding: 2px 8px; flex-shrink: 0; letter-spacing: 0.05em; }
+        .badge-bad { font-size: 0.65rem; font-weight: 600; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); border-radius: 20px; padding: 2px 8px; flex-shrink: 0; letter-spacing: 0.05em; }
+
+        /* ── Start button ── */
+        .btn-start {
+            background: #ffffff;
+            color: var(--space-900);
+            border: none;
+            padding: 11px 24px;
+            font-size: 0.9rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+            box-shadow: 0 0 30px rgba(255,255,255,0.12);
+        }
+        .btn-start:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255,255,255,0.2);
+            background: #f0f0f0;
+        }
+        .btn-start:active:not(:disabled) { transform: translateY(0); }
+        .btn-start:disabled { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.3); cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 50%;
+            border-top-color: var(--space-900);
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ── History modal ── */
+        .hist-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeOverlay 0.2s ease;
+        }
+        .hist-overlay.visible { display: flex; }
+        .hist-modal {
+            background: rgba(11,17,32,0.95);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+            width: 100%; max-width: 560px;
+            max-height: 80vh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            animation: slideModal 0.25s cubic-bezier(0.16,1,0.3,1);
+        }
+        .hist-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .hist-header h2 {
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-size: 1.05rem; font-weight: 700; color: #fff;
+            letter-spacing: -0.02em; margin: 0;
+        }
+        .hist-count {
+            font-size: 0.72rem; font-weight: 600;
+            background: rgba(16,185,129,0.12); color: #34d399;
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 20px; padding: 2px 10px;
+        }
+        .hist-close {
+            background: none; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; width: 30px; height: 30px;
+            color: var(--text-dim); cursor: pointer; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .hist-close:hover { border-color: rgba(239,68,68,0.4); color: #f87171; }
+        .hist-body {
+            overflow-y: auto; flex: 1;
+            padding: 8px 0;
+        }
+        .hist-empty {
+            text-align: center; color: var(--text-dim);
+            font-size: 0.85rem; padding: 40px 20px;
+        }
+        .hist-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.15s;
+        }
+        .hist-item:last-child { border-bottom: none; }
+        .hist-item:hover { background: rgba(255,255,255,0.02); }
+        .hist-icon { font-size: 1rem; flex-shrink: 0; }
+        .hist-info { flex: 1; overflow: hidden; }
+        .hist-url {
+            font-size: 0.82rem; font-weight: 500; color: #e5e7eb;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .hist-meta {
+            font-size: 0.7rem; color: var(--text-dim); margin-top: 2px;
+        }
+        .hist-num {
+            font-size: 0.68rem; font-weight: 700; color: var(--text-dim);
+            background: rgba(255,255,255,0.04); border-radius: 6px;
+            padding: 2px 7px; flex-shrink: 0;
+        }
+        /* dot triple-click hint */
+        .dot { cursor: pointer; }
+
+        /* ── Confirm Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeOverlay 0.2s ease;
+        }
+        .modal-overlay.visible { display: flex; }
+        @keyframes fadeOverlay { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal {
+            background: var(--space-800);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            box-shadow: 0 30px 100px rgba(0,0,0,0.6),
+                        inset 0 1px 0 rgba(255,255,255,0.08);
+            width: 100%;
+            max-width: 520px;
+            padding: 2rem;
+            animation: slideModal 0.25s cubic-bezier(0.16,1,0.3,1);
+        }
+        @keyframes slideModal { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal h2 {
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+        .modal .modal-sub { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 1.2rem; line-height: 1.5; }
+
+        .modal-url-list {
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+            background: rgba(255,255,255,0.02);
+        }
+        .modal-url-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.83rem;
+        }
+        .modal-url-item:last-child { border-bottom: none; }
+        .modal-url-item .num {
+            font-size: 0.68rem;
+            font-weight: 700;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            background: rgba(255,255,255,0.08);
+            color: var(--text-muted);
+            border-radius: 50%;
+            width: 22px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .modal-url-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-muted);
+        }
+        .modal-url-remove {
+            background: none; border: none; cursor: pointer;
+            color: rgba(255,255,255,0.2); font-size: 0.9rem;
+            transition: color 0.15s; padding: 0; flex-shrink: 0;
+        }
+        .modal-url-remove:hover { color: var(--error); }
+
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-size: 0.88rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            cursor: pointer;
+            color: var(--text-dim);
+            font-weight: 500;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .btn-cancel:hover { border-color: rgba(255,255,255,0.2); color: var(--text-muted); }
+
+        .btn-confirm {
+            background: #ffffff;
+            color: var(--space-900);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 0.88rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        .btn-confirm:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,255,255,0.2); }
+        .btn-confirm:disabled { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.3); cursor: not-allowed; }
+
+        .modal-empty-note {
+            font-size: 0.78rem; color: #f87171; text-align: center;
+            padding: 6px 0; display: none;
+        }
+        .modal-empty-note.visible { display: block; }
+
+        /* ── Job cards ── */
+        #jobList { display: flex; flex-direction: column; gap: 12px; }
+
+        .job-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            overflow: hidden;
+            animation: cardIn 0.35s cubic-bezier(0.16,1,0.3,1);
+            transition: border-color 0.4s;
+        }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .job-card.status-processing { border-color: rgba(16,185,129,0.3); }
+        .job-card.status-complete   { border-color: rgba(16,185,129,0.3); }
+        .job-card.status-error      { border-color: rgba(239,68,68,0.3); }
+
+        .job-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .job-url {
+            flex: 1;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .job-status-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            letter-spacing: 0.04em;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .badge-processing { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .badge-complete   { background: rgba(16,185,129,0.12);  color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .badge-error      { background: rgba(239,68,68,0.1);    color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+        .job-log {
+            background: rgba(255,255,255,0.02);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(255,255,255,0.04);
+            padding: 10px 14px;
+            max-height: 130px;
+            overflow-y: auto;
+            font-family: 'SF Mono','Monaco','Consolas', monospace;
+            font-size: 0.75rem;
+        }
+        .log-line {
+            color: var(--text-dim);
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            animation: fadeIn 0.2s ease;
+        }
+        .log-line:last-child { border-bottom: none; color: #34d399; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .job-footer {
+            padding: 10px 14px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .btn-download {
+            background: rgba(16,185,129,0.15);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,0.25);
+            border-radius: 8px;
+            padding: 7px 16px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-weight: 600;
+            transition: transform 0.15s, background 0.15s;
+        }
+        .btn-download:hover { transform: translateY(-1px); background: rgba(16,185,129,0.22); }
+
+        .btn-dismiss {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            color: var(--text-dim);
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .btn-dismiss:hover { border-color: rgba(255,255,255,0.2); color: var(--text-muted); }
+
+        /* ── Matrix canvas ── */
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.18;
+        }
+
+        /* ── Grid background (subtle) ── */
+        .container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background-size: 32px 32px;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.015) 1px, transparent 1px);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container > * { position: relative; z-index: 1; }
+    </style>
+</head>
+<canvas id="matrix-canvas"></canvas>
+
+    <header class="page-header">
+        <img src="https://pedrovysk.com/assets/logo-pedrovysk.png" alt="Pedro Vysk" style="height:48px; width:auto; margin: 0 auto 20px; display:block; filter: brightness(0) invert(1);">
+        <div class="eyebrow">
+            <span class="dot"></span>
+            Website Downloader
+        </div>
+        <h1>Capture qualquer site.</h1>
+        <p class="subtitle">Baixe réplicas de múltiplos sites ao mesmo tempo, cada um compactado em seu arquivo ZIP.</p>
+    </header>
+
+    <div class="container">
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" id="tabRows"  onclick="switchTab('rows')"><span class="tab-dot"></span>Um por um</button>
+            <button class="tab"        id="tabPaste" onclick="switchTab('paste')"><span class="tab-dot"></span>Colar lista</button>
+        </div>
+
+        <!-- Panel: individual rows -->
+        <div id="panelRows" class="visible">
+            <div id="urlList">
+                <div class="url-row">
+                    <input type="url" placeholder="https://exemplo.com">
+                    <button class="btn-remove" onclick="removeRow(this)" title="Remover">✕</button>
+                </div>
+            </div>
+            <button class="btn-add-row" onclick="addRow()">+ Adicionar outro site</button>
+        </div>
+
+        <!-- Panel: paste list -->
+        <div id="panelPaste">
+            <textarea id="pasteArea" placeholder="Cole aqui vários links — um por linha, separados por espaço ou vírgula:
+
+https://site1.com
+https://site2.com
+https://site3.com"></textarea>
+            <p class="paste-hint">Aceita qualquer formato: um por linha, separados por vírgula, espaço ou tabulação.</p>
+            <div id="pastePreview">
+                <div class="preview-label">URLs detectadas</div>
+                <div id="previewItems"></div>
+            </div>
+        </div>
+
+        <!-- Start button -->
+        <button class="btn-start" id="startBtn" onclick="requestConfirm()">
+            <span id="btnText">Baixar Todos</span>
+            <div class="spinner" id="spinner" style="display:none;"></div>
+        </button>
+
+        <div id="jobList"></div>
+    </div>
+
+    <!-- Confirm modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2>Confirmar downloads</h2>
+            <p class="modal-sub" id="modalSub"></p>
+            <div class="modal-url-list" id="modalUrlList"></div>
+            <p class="modal-empty-note" id="modalEmptyNote">Remova todos os itens inválidos antes de continuar.</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-confirm" id="btnConfirm" onclick="confirmAndStart()">Iniciar downloads</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    /* ── tab state ── */
+    let activeTab = 'rows';
+    const activeJobs = {};
+
+    function switchTab(tab) {
+        activeTab = tab;
+        document.getElementById('panelRows').classList.toggle('visible', tab === 'rows');
+        document.getElementById('panelPaste').classList.toggle('visible', tab === 'paste');
+        document.getElementById('tabRows').classList.toggle('active', tab === 'rows');
+        document.getElementById('tabPaste').classList.toggle('active', tab === 'paste');
+        if (tab === 'paste') document.getElementById('pasteArea').focus();
+    }
+
+    /* ── row panel ── */
+    function addRow() {
+        const list = document.getElementById('urlList');
+        const row = document.createElement('div');
+        row.className = 'url-row';
+        row.innerHTML = `
+            <input type="url" placeholder="https://exemplo.com">
+            <button class="btn-remove" onclick="removeRow(this)" title="Remover">✕</button>
+        `;
+        list.appendChild(row);
+        row.querySelector('input').focus();
+    }
+
+    function removeRow(btn) {
+        const list = document.getElementById('urlList');
+        if (list.children.length <= 1) return;
+        btn.closest('.url-row').remove();
+    }
+
+    /* ── paste panel: live preview ── */
+    function extractUrls(text) {
+        const tokens = text.split(/[\s,;]+/).map(t => t.trim()).filter(Boolean);
+        return tokens.map(t => {
+            if (!/^https?:\/\//i.test(t) && t.includes('.')) t = 'https://' + t;
+            try { new URL(t); return { url: t, valid: true }; }
+            catch { return { url: t, valid: false }; }
+        });
+    }
+
+    document.getElementById('pasteArea').addEventListener('input', updatePastePreview);
+
+    function updatePastePreview() {
+        const text = document.getElementById('pasteArea').value;
+        const items = extractUrls(text);
+        const preview = document.getElementById('pastePreview');
+        const container = document.getElementById('previewItems');
+        if (items.length === 0) { preview.classList.remove('visible'); return; }
+        preview.classList.add('visible');
+        container.innerHTML = items.map(i => `
+            <div class="preview-url">
+                <span class="${i.valid ? 'badge-ok' : 'badge-bad'}">${i.valid ? 'OK' : 'inválida'}</span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.url}</span>
+            </div>
+        `).join('');
+    }
+
+    /* ── collect URLs ── */
+    function collectUrls() {
+        if (activeTab === 'rows') {
+            return [...document.querySelectorAll('#urlList input[type="url"]')]
+                .map(i => i.value.trim()).filter(Boolean)
+                .map(u => ({ url: u, valid: isValidUrl(u) }));
+        } else {
+            return extractUrls(document.getElementById('pasteArea').value);
+        }
+    }
+
+    function isValidUrl(str) {
+        try { new URL(str); return true; } catch { return false; }
+    }
+
+    /* ── modal ── */
+    let pendingUrls = [];
+
+    function requestConfirm() {
+        const items = collectUrls();
+        const valid = items.filter(i => i.valid).map(i => i.url);
+        if (items.length === 0) { alert('Insira pelo menos uma URL.'); return; }
+
+        const listEl = document.getElementById('modalUrlList');
+        listEl.innerHTML = valid.map((url, idx) => `
+            <div class="modal-url-item" data-url="${url}">
+                <span class="num">${idx + 1}</span>
+                <span class="modal-url-text" title="${url}">${url}</span>
+                <button class="modal-url-remove" title="Remover" onclick="removeModalItem(this)">✕</button>
+            </div>
+        `).join('');
+
+        const dropped = items.length - valid.length;
+        document.getElementById('modalSub').textContent =
+            `${valid.length} site${valid.length !== 1 ? 's' : ''} prontos para baixar` +
+            (dropped ? ` · ${dropped} URL${dropped !== 1 ? 's' : ''} inválida${dropped !== 1 ? 's' : ''} ignorada${dropped !== 1 ? 's' : ''}` : '') +
+            '. Revise e confirme.';
+
+        refreshModalState();
+        document.getElementById('modalOverlay').classList.add('visible');
+    }
+
+    function removeModalItem(btn) {
+        btn.closest('.modal-url-item').remove();
+        refreshModalState();
+    }
+
+    function refreshModalState() {
+        const items = document.querySelectorAll('.modal-url-item');
+        const empty = items.length === 0;
+        document.getElementById('btnConfirm').disabled = empty;
+        document.getElementById('modalEmptyNote').classList.toggle('visible', empty);
+        items.forEach((el, i) => { el.querySelector('.num').textContent = i + 1; });
+        const sub = document.getElementById('modalSub');
+        const count = items.length;
+        sub.textContent = sub.textContent.replace(/^\d+/, count);
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('visible');
+    }
+
+    document.getElementById('modalOverlay').addEventListener('click', e => {
+        if (e.target === document.getElementById('modalOverlay')) closeModal();
+    });
+
+    function confirmAndStart() {
+        const items = [...document.querySelectorAll('.modal-url-item')];
+        pendingUrls = items.map(el => el.dataset.url);
+        closeModal();
+        if (pendingUrls.length === 0) return;
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('spinner').style.display = 'block';
+        document.getElementById('btnText').textContent = 'Iniciando...';
+
+        Promise.all(pendingUrls.map(url => startJob(url))).then(() => {
+            if (activeTab === 'rows') {
+                document.querySelectorAll('#urlList input[type="url"]').forEach(i => i.value = '');
+            } else {
+                document.getElementById('pasteArea').value = '';
+                document.getElementById('pastePreview').classList.remove('visible');
+            }
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('btnText').textContent = 'Baixar Todos';
+        });
+    }
+
+    /* ── job execution ── */
+    function startJob(url) {
+        return fetch('/start-download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { createJobCard(url, null, 'Erro ao iniciar: ' + data.error); return; }
+            const card = createJobCard(url, data.session_id);
+            connectSSE(data.session_id, url, card);
+        })
+        .catch(err => createJobCard(url, null, 'Falha de conexão: ' + err.message));
+    }
+
+    function createJobCard(url, sessionId, immediateError) {
+        const list = document.getElementById('jobList');
+        const card = document.createElement('div');
+        card.className = 'job-card ' + (immediateError ? 'status-error' : 'status-processing');
+        if (sessionId) card.dataset.session = sessionId;
+        const display = url.length > 65 ? url.slice(0, 62) + '…' : url;
+        card.innerHTML = `
+            <div class="job-header">
+                <span class="job-url" title="${url}">${display}</span>
+                <span class="job-status-badge ${immediateError ? 'badge-error' : 'badge-processing'}">${immediateError ? 'Erro' : 'Processando'}</span>
+            </div>
+            <div class="job-log"></div>
+            <div class="job-footer">
+                <button class="btn-dismiss" onclick="dismissCard(this)">Fechar</button>
+            </div>
+        `;
+        if (immediateError) appendLog(card, '✕ ' + immediateError);
+        list.insertBefore(card, list.firstChild);
+        return card;
+    }
+
+    function connectSSE(sessionId, url, card) {
+        const es = new EventSource('/stream/' + sessionId);
+        activeJobs[sessionId] = { url, eventSource: es };
+        es.onmessage = e => appendLog(card, e.data);
+        es.addEventListener('done', e => {
+            es.close(); delete activeJobs[sessionId];
+            if (e.data === 'complete') {
+                setCardStatus(card, 'complete');
+                addDownloadButton(card, sessionId);
+                triggerAutoDownload(sessionId);
+            } else {
+                setCardStatus(card, 'error');
+                appendLog(card, '✕ Download falhou');
+            }
+        });
+        es.onerror = () => {
+            es.close(); delete activeJobs[sessionId];
+            const badge = card.querySelector('.job-status-badge');
+            if (badge && badge.classList.contains('badge-processing')) {
+                setCardStatus(card, 'error');
+                appendLog(card, '✕ Conexão perdida');
+            }
+        };
+    }
+
+    function appendLog(card, message) {
+        const log = card.querySelector('.job-log');
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.textContent = message;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function setCardStatus(card, status) {
+        card.className = 'job-card status-' + status;
+        const badge = card.querySelector('.job-status-badge');
+        if (!badge) return;
+        badge.className = 'job-status-badge badge-' + status;
+        badge.textContent = status === 'complete' ? 'Pronto ✓' : 'Erro';
+    }
+
+    function addDownloadButton(card, sessionId) {
+        const footer = card.querySelector('.job-footer');
+        const btn = document.createElement('button');
+        btn.className = 'btn-download';
+        btn.textContent = '↓ Baixar ZIP';
+        btn.onclick = () => triggerAutoDownload(sessionId);
+        footer.insertBefore(btn, footer.firstChild);
+    }
+
+    function triggerAutoDownload(sessionId) {
+        const a = document.createElement('a');
+        a.href = '/download-file/' + sessionId;
+        a.click();
+    }
+
+    function dismissCard(btn) {
+        const card = btn.closest('.job-card');
+        const sid = card.dataset.session;
+        if (sid && activeJobs[sid]) { activeJobs[sid].eventSource.close(); delete activeJobs[sid]; }
+        card.remove();
+    }
+
+    document.getElementById('urlList').addEventListener('keypress', e => {
+        if (e.key === 'Enter' && !document.getElementById('startBtn').disabled) requestConfirm();
+    });
+</script>
+
+<!-- History modal -->
+<div class="hist-overlay" id="histOverlay">
+    <div class="hist-modal">
+        <div class="hist-header">
+            <h2>📋 Sites baixados</h2>
+            <span class="hist-count" id="histCount">0</span>
+            <button class="hist-close" onclick="closeHistory()">✕</button>
+        </div>
+        <div class="hist-body" id="histBody">
+            <div class="hist-empty">Nenhum download concluído ainda.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ── History modal ── */
+    let _histTripleClicks = 0;
+    let _histTimer = null;
+
+    document.querySelector('.dot').addEventListener('click', () => {
+        _histTripleClicks++;
+        clearTimeout(_histTimer);
+        _histTimer = setTimeout(() => { _histTripleClicks = 0; }, 600);
+        if (_histTripleClicks >= 3) {
+            _histTripleClicks = 0;
+            openHistory();
+        }
+    });
+
+    function openHistory() {
+        fetch('/history')
+            .then(r => r.json())
+            .then(items => {
+                const body = document.getElementById('histBody');
+                const count = document.getElementById('histCount');
+                count.textContent = items.length;
+                if (items.length === 0) {
+                    body.innerHTML = '<div class="hist-empty">Nenhum download concluído ainda.</div>';
+                } else {
+                    body.innerHTML = items.map((it, i) => {
+                        const d = new Date(it.completed_at * 1000);
+                        const when = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                        return `
+                        <div class="hist-item">
+                            <span class="hist-icon">✅</span>
+                            <div class="hist-info">
+                                <div class="hist-url" title="${it.url}">${it.url}</div>
+                                <div class="hist-meta">${it.filename} · ${when}</div>
+                            </div>
+                            <span class="hist-num">#${items.length - i}</span>
+                        </div>`;
+                    }).join('');
+                }
+                document.getElementById('histOverlay').classList.add('visible');
+            })
+            .catch(() => alert('Erro ao carregar histórico.'));
+    }
+
+    function closeHistory() {
+        document.getElementById('histOverlay').classList.remove('visible');
+    }
+
+    document.getElementById('histOverlay').addEventListener('click', e => {
+        if (e.target === document.getElementById('histOverlay')) closeHistory();
+    });
+</script>
+
+<script>
+    /* ── Matrix rain ── */
+    (function () {
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
+        const FONT_SIZE = 14;
+        let cols, drops;
+
+        function resize() {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cols  = Math.floor(canvas.width / FONT_SIZE);
+            drops = Array.from({ length: cols }, () => Math.random() * -100);
+        }
+
+        function draw() {
+            /* fading trail — dark overlay each frame */
+            ctx.fillStyle = 'rgba(2, 4, 10, 0.18)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = FONT_SIZE + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+                const y = drops[i] * FONT_SIZE;
+
+                /* head glyph — bright white */
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(char, i * FONT_SIZE, y);
+
+                /* body — green with slight variation */
+                const green = Math.floor(180 + Math.random() * 75);
+                ctx.fillStyle = `rgb(0, ${green}, 60)`;
+                ctx.fillText(
+                    CHARS[Math.floor(Math.random() * CHARS.length)],
+                    i * FONT_SIZE,
+                    y - FONT_SIZE
+                );
+
+                /* reset column randomly after it passes the screen */
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i] += 0.5;
+            }
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+        setInterval(draw, 40);
+    })();
+</script>
+</body>
+</html>

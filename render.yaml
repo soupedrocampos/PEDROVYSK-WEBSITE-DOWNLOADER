@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: website-downloader
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
