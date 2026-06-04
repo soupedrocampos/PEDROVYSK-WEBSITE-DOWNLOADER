@@ -37,7 +37,9 @@ _history_lock = threading.Lock()
 MAX_HISTORY = 200
 
 # Limit concurrent Playwright browsers to avoid crashing the machine
-MAX_CONCURRENT = 3
+# Free tier (Render/Railway): 512 MB RAM, ~200-300 MB per Chromium instance.
+# Keep at 1 to avoid OOM crashes. Raise to 2-3 only on paid plans (2 GB+ RAM).
+MAX_CONCURRENT = int(os.environ.get('MAX_CONCURRENT', '1'))
 _semaphore = threading.Semaphore(MAX_CONCURRENT)
 
 
